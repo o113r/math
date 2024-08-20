@@ -1,0 +1,226 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' 'unsafe-inline' https://fonts.gstatic.com; img-src 'self' data: blob: https://pfst.cf2.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com; media-src 'self' data: blob: https://pfst.cf2.poecdn.net https://i.imgur.com https://wikimedia.org; frame-src 'self' https://www.youtube.com; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小車車速度大比拼</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #FFF5E6;
+            color: #4A4A4A;
+        }
+        .game-container {
+            background-color: #FFD1DC;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #FF69B4;
+            text-align: center;
+        }
+        .road {
+            width: 100%;
+            height: 20px;
+            background-color: #8FBC8F;
+            margin: 30px 0;
+            position: relative;
+            border-radius: 10px;
+        }
+        .car {
+            width: 60px;
+            height: 40px;
+            position: absolute;
+            left: 0;
+            top: -20px;
+            transition: left 3s linear;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        #car1, #car3 { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40"><rect x="5" y="20" width="50" height="15" rx="5" fill="%23FF6B6B"/><circle cx="15" cy="35" r="5" fill="%23333"/><circle cx="45" cy="35" r="5" fill="%23333"/><rect x="10" y="10" width="40" height="15" rx="5" fill="%23FF6B6B"/><rect x="20" y="5" width="20" height="10" rx="3" fill="%23FF6B6B"/></svg>'); }
+        #car2, #car4 { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="40" viewBox="0 0 60 40"><rect x="5" y="20" width="50" height="15" rx="5" fill="%234ECDC4"/><circle cx="15" cy="35" r="5" fill="%23333"/><circle cx="45" cy="35" r="5" fill="%23333"/><rect x="10" y="10" width="40" height="15" rx="5" fill="%234ECDC4"/><rect x="20" y="5" width="20" height="10" rx="3" fill="%234ECDC4"/></svg>'); }
+        button {
+            margin: 10px 5px;
+            padding: 10px 15px;
+            font-size: 18px;
+            background-color: #FFA07A;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #FF8C69;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 18px;
+            color: #FF69B4;
+        }
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            color: #FF69B4;
+        }
+    </style>
+</head>
+<body>
+    <h1>小車車速度大比拼</h1>
+    
+    <div class="game-container">
+        <h2>比賽一：誰跑得快？</h2>
+        <p>兩輛小車車要跑相同的路，看看誰跑得快！</p>
+        <div class="timer" id="timer1">紅色小車：0.0 秒</div>
+        <div class="road">
+            <div id="car1" class="car"></div>
+        </div>
+        <div class="timer" id="timer2">綠色小車：0.0 秒</div>
+        <div class="road">
+            <div id="car2" class="car"></div>
+        </div>
+        <button onclick="startSceneOne()">開始比賽</button>
+        <button onclick="resetSceneOne()">重新開始</button>
+        <div id="resultOne" class="result"></div>
+    </div>
+
+    <div class="game-container">
+        <h2>比賽二：誰跑得遠？</h2>
+        <p>兩輛小車車要跑3秒鐘，看看誰跑得遠！</p>
+        <div class="timer" id="timerTwo">3.0 秒</div>
+        <div class="road">
+            <div id="car3" class="car"></div>
+        </div>
+        <div class="road">
+            <div id="car4" class="car"></div>
+        </div>
+        <button onclick="startSceneTwo()">開始比賽</button>
+        <button onclick="resetSceneTwo()">重新開始</button>
+        <div id="resultTwo" class="result"></div>
+    </div>
+
+    <script>
+        function startSceneOne() {
+            const car1 = document.getElementById('car1');
+            const car2 = document.getElementById('car2');
+            const timer1 = document.getElementById('timer1');
+            const timer2 = document.getElementById('timer2');
+            const resultOne = document.getElementById('resultOne');
+
+            car1.style.left = '0';
+            car2.style.left = '0';
+            resultOne.textContent = '';
+
+            let startTime = Date.now();
+            let car1Finished = false;
+            let car2Finished = false;
+
+            car1.style.transition = 'left 2s linear';
+            car2.style.transition = 'left 3s linear';
+            car1.style.left = 'calc(100% - 60px)';
+            car2.style.left = 'calc(100% - 60px)';
+
+            function updateTimer() {
+                let currentTime = Date.now();
+                let elapsedTime = (currentTime - startTime) / 1000;
+                
+                if (!car1Finished) {
+                    timer1.textContent = `紅色小車：${elapsedTime.toFixed(1)} 秒`;
+                }
+                if (!car2Finished) {
+                    timer2.textContent = `綠色小車：${elapsedTime.toFixed(1)} 秒`;
+                }
+                
+                if (!car1Finished || !car2Finished) {
+                    requestAnimationFrame(updateTimer);
+                } else {
+                    resultOne.textContent = '紅色小車車跑得快！時間短的小車車速度快哦！';
+                }
+            }
+
+            car1.addEventListener('transitionend', () => {
+                car1Finished = true;
+            });
+
+            car2.addEventListener('transitionend', () => {
+                car2Finished = true;
+            });
+
+            requestAnimationFrame(updateTimer);
+        }
+
+        function startSceneTwo() {
+            const car3 = document.getElementById('car3');
+            const car4 = document.getElementById('car4');
+            const timerTwo = document.getElementById('timerTwo');
+            const resultTwo = document.getElementById('resultTwo');
+
+            car3.style.left = '0';
+            car4.style.left = '0';
+            resultTwo.textContent = '';
+
+            let time = 3.0;
+
+            function updateTimer() {
+                time -= 0.1;
+                timerTwo.textContent = time.toFixed(1) + ' 秒';
+                
+                if (time > 0) {
+                    setTimeout(updateTimer, 100);
+                } else {
+                    timerTwo.textContent = '時間到！';
+                    resultTwo.textContent = '綠色小車車跑得遠！跑得遠的小車車速度快哦！';
+                }
+            }
+
+            car3.style.transition = 'left 3s linear';
+            car4.style.transition = 'left 3s linear';
+            car3.style.left = 'calc(60% - 60px)';
+            car4.style.left = 'calc(100% - 60px)';
+            
+            updateTimer();
+        }
+
+        function resetSceneOne() {
+            const car1 = document.getElementById('car1');
+            const car2 = document.getElementById('car2');
+            const timer1 = document.getElementById('timer1');
+            const timer2 = document.getElementById('timer2');
+            const resultOne = document.getElementById('resultOne');
+
+            car1.style.transition = 'none';
+            car2.style.transition = 'none';
+            car1.style.left = '0';
+            car2.style.left = '0';
+            timer1.textContent = '紅色小車：0.0 秒';
+            timer2.textContent = '綠色小車：0.0 秒';
+            resultOne.textContent = '';
+        }
+
+        function resetSceneTwo() {
+            const car3 = document.getElementById('car3');
+            const car4 = document.getElementById('car4');
+            const timerTwo = document.getElementById('timerTwo');
+            const resultTwo = document.getElementById('resultTwo');
+
+            car3.style.transition = 'none';
+            car4.style.transition = 'none';
+            car3.style.left = '0';
+            car4.style.left = '0';
+            timerTwo.textContent = '3.0 秒';
+            resultTwo.textContent = '';
+        }
+    </script>
+
+
+</body></html>
